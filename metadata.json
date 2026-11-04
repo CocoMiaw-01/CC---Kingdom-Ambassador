@@ -1,0 +1,6 @@
+{
+  "name": "Kingdom Ambassador Dashboard",
+  "description": "Christian University & College Youth Committee portal for managing members, worship events, weekly tasks, meetings, and ministry resources.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

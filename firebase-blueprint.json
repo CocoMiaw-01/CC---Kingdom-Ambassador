@@ -1,0 +1,621 @@
+{
+  "entities": {
+    "AmbassadorProfile": {
+      "title": "AmbassadorProfile",
+      "description": "Kingdom Ambassador Committee member profile stored per authenticated user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the profile owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Full display name of the committee member.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "initials": {
+          "type": "string",
+          "description": "Two-character avatar monogram initials.",
+          "minLength": 1,
+          "maxLength": 4
+        },
+        "roleTitle": {
+          "type": "string",
+          "description": "Committee title shown in header and profile.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "ministryTeam": {
+          "type": "string",
+          "description": "Assigned sub-committee team.",
+          "enum": [
+            "Executive Board",
+            "Worship & Prayer",
+            "Outreach & Evangelism",
+            "Media & Creative",
+            "Hospitality & Logistics"
+          ],
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "majorAndYear": {
+          "type": "string",
+          "description": "University major and academic year.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short campus ministry testimony or focus.",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Optional avatar URL from Google account.",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "officeLine": {
+          "type": "string",
+          "description": "Member contact number updated in their own profile.",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "accessRole": {
+          "type": "string",
+          "description": "Invitation role used to register (Student/Alumni or Admin).",
+          "enum": ["Student/Alumni", "Admin"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "accountTag": {
+          "type": "string",
+          "description": "Unique Google account identifier ensuring one registration per account.",
+          "minLength": 0,
+          "maxLength": 160
+        },
+        "isOnline": {
+          "type": "boolean",
+          "description": "Whether the member is currently logged in and online."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the profile was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the profile was last updated."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "initials",
+        "roleTitle",
+        "ministryTeam",
+        "majorAndYear",
+        "bio",
+        "photoURL",
+        "officeLine",
+        "accessRole",
+        "accountTag",
+        "isOnline",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PrivateContactInfo": {
+      "title": "PrivateContactInfo",
+      "description": "Isolated private PII contact and notification preferences for a user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified Google account email.",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "notificationsEnabled": {
+          "type": "boolean",
+          "description": "Whether weekly worship and task notifications are enabled."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when private settings were updated."
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "notificationsEnabled",
+        "updatedAt"
+      ]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Verified Committee Admin registry entry.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Admin Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "invitationCode": {
+          "type": "string",
+          "description": "Verified Admin invitation code.",
+          "minLength": 3,
+          "maxLength": 40
+        },
+        "grantedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when admin access was granted."
+        }
+      },
+      "required": [
+        "uid",
+        "invitationCode",
+        "grantedAt"
+      ]
+    },
+    "AdvisoryRosterMeta": {
+      "title": "AdvisoryRosterMeta",
+      "description": "Bounded list of active Advisory Council document IDs for live synchronization.",
+      "type": "object",
+      "properties": {
+        "advisorIds": {
+          "type": "array",
+          "description": "Ordered list of advisor IDs (max 50)."
+        },
+        "updatedByUid": {
+          "type": "string",
+          "description": "Admin UID that last updated the roster.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when roster was updated."
+        }
+      },
+      "required": [
+        "advisorIds",
+        "updatedByUid",
+        "updatedAt"
+      ]
+    },
+    "AdvisorEntry": {
+      "title": "AdvisorEntry",
+      "description": "Publicly visible Advisory Council profile managed by Committee Admins.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique advisor document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Advisor full name and title.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "localChurch": {
+          "type": "string",
+          "description": "Advisor local church affiliation.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "ministry": {
+          "type": "string",
+          "description": "Advisor ministry role or focus.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "officeLine": {
+          "type": "string",
+          "description": "Public ministry office contact number.",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "details": {
+          "type": "string",
+          "description": "Advisor biography and ministry details (max 700 words / 5000 chars).",
+          "minLength": 1,
+          "maxLength": 5000
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Uploaded advisor portrait image (Data URL or URL).",
+          "minLength": 0,
+          "maxLength": 250000
+        },
+        "updatedByUid": {
+          "type": "string",
+          "description": "UID of the Admin who created or updated this advisor.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when advisor was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when advisor was last updated."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "localChurch",
+        "ministry",
+        "officeLine",
+        "details",
+        "photoUrl",
+        "updatedByUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "EventRosterMeta": {
+      "title": "EventRosterMeta",
+      "description": "Bounded list of active Event document IDs for live synchronization across Public, Student/Alumni, and Admin views.",
+      "type": "object",
+      "properties": {
+        "eventIds": {
+          "type": "array",
+          "description": "Ordered list of event IDs (max 50)."
+        },
+        "updatedByUid": {
+          "type": "string",
+          "description": "Admin UID that last updated the event roster.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when event roster was updated."
+        }
+      },
+      "required": [
+        "eventIds",
+        "updatedByUid",
+        "updatedAt"
+      ]
+    },
+    "EventEntry": {
+      "title": "EventEntry",
+      "description": "Publicly visible Kingdom Ambassador Event with 1:1 poster image managed by Committee Admins.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique event document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Event title.",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "monthShort": {
+          "type": "string",
+          "description": "Three-letter uppercase month abbreviation.",
+          "minLength": 1,
+          "maxLength": 12
+        },
+        "dayNumber": {
+          "type": "string",
+          "description": "Day number of month.",
+          "minLength": 1,
+          "maxLength": 10
+        },
+        "dayOfWeek": {
+          "type": "string",
+          "description": "Day of week label.",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "fullDate": {
+          "type": "string",
+          "description": "Formatted date or date range displayed under the 1:1 poster.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "timeRange": {
+          "type": "string",
+          "description": "Formatted event time range.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "location": {
+          "type": "string",
+          "description": "Campus venue or building location.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "description": {
+          "type": "string",
+          "description": "Event description and ministry details.",
+          "minLength": 1,
+          "maxLength": 3000
+        },
+        "type": {
+          "type": "string",
+          "description": "Event category.",
+          "enum": ["Meeting", "Worship", "Outreach", "Prayer"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "1:1 square event poster image URL or compressed Data URL.",
+          "minLength": 0,
+          "maxLength": 250000
+        },
+        "isFeaturedMeeting": {
+          "type": "boolean",
+          "description": "Whether this event is featured on the Overview card."
+        },
+        "rsvpStatus": {
+          "type": "string",
+          "description": "Default RSVP status indicator.",
+          "enum": ["Going", "Maybe", "Not Going"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "attendeesJson": {
+          "type": "string",
+          "description": "Serialized JSON array of attendee badges.",
+          "minLength": 2,
+          "maxLength": 20000
+        },
+        "agendaJson": {
+          "type": "string",
+          "description": "Serialized JSON array of agenda items.",
+          "minLength": 2,
+          "maxLength": 10000
+        },
+        "updatedByUid": {
+          "type": "string",
+          "description": "UID of the Admin who created or updated this event.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when event was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when event was last updated."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "monthShort",
+        "dayNumber",
+        "dayOfWeek",
+        "fullDate",
+        "timeRange",
+        "location",
+        "description",
+        "type",
+        "imageUrl",
+        "isFeaturedMeeting",
+        "rsvpStatus",
+        "attendeesJson",
+        "agendaJson",
+        "updatedByUid",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DashboardSyncState": {
+      "title": "DashboardSyncState",
+      "description": "Live synchronized state for Announcements, Committee Directory, and Tasks updated by Admins.",
+      "type": "object",
+      "properties": {
+        "announcementsJson": {
+          "type": "string",
+          "description": "Serialized JSON array of CommitteeAnnouncement items.",
+          "minLength": 2,
+          "maxLength": 100000
+        },
+        "membersJson": {
+          "type": "string",
+          "description": "Serialized JSON array of CommitteeMember items.",
+          "minLength": 2,
+          "maxLength": 100000
+        },
+        "tasksJson": {
+          "type": "string",
+          "description": "Serialized JSON array of CommitteeTask items.",
+          "minLength": 2,
+          "maxLength": 100000
+        },
+        "updatedByUid": {
+          "type": "string",
+          "description": "Admin UID that last updated the dashboard sync state.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when dashboard sync state was updated."
+        }
+      },
+      "required": [
+        "announcementsJson",
+        "membersJson",
+        "tasksJson",
+        "updatedByUid",
+        "updatedAt"
+      ]
+    },
+    "CommitteeRosterMeta": {
+      "title": "CommitteeRosterMeta",
+      "description": "Live roster of auto-registered Committee Member UIDs and Admin-deleted UIDs.",
+      "type": "object",
+      "properties": {
+        "memberUids": {
+          "type": "array",
+          "description": "Ordered list of registered committee member UIDs (max 50)."
+        },
+        "deletedUids": {
+          "type": "array",
+          "description": "List of UIDs removed by Admin (max 50)."
+        },
+        "updatedByUid": {
+          "type": "string",
+          "description": "UID of the user or Admin who updated the roster.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the committee roster was updated."
+        }
+      },
+      "required": [
+        "memberUids",
+        "deletedUids",
+        "updatedByUid",
+        "updatedAt"
+      ]
+    },
+    "InvitationCodesMeta": {
+      "title": "InvitationCodesMeta",
+      "description": "Admin-managed invitation codes for Student/Alumni (SA) and Admin access.",
+      "type": "object",
+      "properties": {
+        "invitationsJson": {
+          "type": "string",
+          "description": "Serialized JSON array of invitation objects with code and role (Student/Alumni or Admin).",
+          "minLength": 2,
+          "maxLength": 50000
+        },
+        "updatedByUid": {
+          "type": "string",
+          "description": "Admin UID that last updated the invitation codes.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when invitation codes were updated."
+        }
+      },
+      "required": [
+        "invitationsJson",
+        "updatedByUid",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": {
+        "$ref": "#/entities/AmbassadorProfile"
+      },
+      "description": "Stores the Kingdom Ambassador Committee profile document for each authenticated user, self-editable only by the owner and readable in the Committee Directory."
+    },
+    "/profiles/{userId}/private/{infoId}": {
+      "schema": {
+        "$ref": "#/entities/PrivateContactInfo"
+      },
+      "description": "Stores isolated private email and notification settings strictly accessible only by the profile owner."
+    },
+    "/admins/{userId}": {
+      "schema": {
+        "$ref": "#/entities/AdminRecord"
+      },
+      "description": "Stores verified Admin UIDs authorized to create and update Advisory Council, Events, Invitations, and Dashboard records."
+    },
+    "/advisory_meta/{metaId}": {
+      "schema": {
+        "$ref": "#/entities/AdvisoryRosterMeta"
+      },
+      "description": "Stores the singleton roster index document (metaId == 'roster') listing active advisor IDs for live updates."
+    },
+    "/advisors/{advisorId}": {
+      "schema": {
+        "$ref": "#/entities/AdvisorEntry"
+      },
+      "description": "Stores individual Advisory Council member profiles readable by public, Student/Alumni, and Admin users, and writable only by Admins."
+    },
+    "/event_meta/{metaId}": {
+      "schema": {
+        "$ref": "#/entities/EventRosterMeta"
+      },
+      "description": "Stores the singleton roster index document (metaId == 'roster') listing active event IDs for live updates."
+    },
+    "/events/{eventId}": {
+      "schema": {
+        "$ref": "#/entities/EventEntry"
+      },
+      "description": "Stores individual Kingdom Ambassador Events with 1:1 posters readable by public, Student/Alumni, and Admin users, and writable only by Admins."
+    },
+    "/dashboard_sync/{stateId}": {
+      "schema": {
+        "$ref": "#/entities/DashboardSyncState"
+      },
+      "description": "Stores the singleton live dashboard state (stateId == 'public_board') for Announcements, Committee Members, and Tasks updated by Admins."
+    },
+    "/committee_meta/{metaId}": {
+      "schema": {
+        "$ref": "#/entities/CommitteeRosterMeta"
+      },
+      "description": "Stores the singleton committee roster index (metaId == 'roster') of logged-in users registered via invitation codes."
+    },
+    "/invitation_meta/{metaId}": {
+      "schema": {
+        "$ref": "#/entities/InvitationCodesMeta"
+      },
+      "description": "Stores the singleton invitation codes registry (metaId == 'codes') managed strictly by Admins for SA and Admin invitations."
+    }
+  }
+}

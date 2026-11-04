@@ -1,0 +1,671 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'eleazeralvin1@gmail.com'
+      );
+    }
+
+    function isValidAmbassadorProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'displayName',
+          'initials',
+          'roleTitle',
+          'ministryTeam',
+          'majorAndYear',
+          'bio',
+          'photoURL',
+          'officeLine',
+          'accessRole',
+          'accountTag',
+          'isOnline',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'displayName',
+          'initials',
+          'roleTitle',
+          'ministryTeam',
+          'majorAndYear',
+          'bio',
+          'photoURL',
+          'officeLine',
+          'accessRole',
+          'accountTag',
+          'isOnline',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.uid == request.auth.uid &&
+        isValidId(data.uid) &&
+        data.displayName is string &&
+        data.displayName.size() >= 1 &&
+        data.displayName.size() <= 80 &&
+        data.initials is string &&
+        data.initials.size() >= 1 &&
+        data.initials.size() <= 4 &&
+        data.roleTitle is string &&
+        data.roleTitle.size() >= 1 &&
+        data.roleTitle.size() <= 80 &&
+        data.ministryTeam is string &&
+        data.ministryTeam.size() >= 1 &&
+        data.ministryTeam.size() <= 60 &&
+        data.ministryTeam in [
+          'Executive Board',
+          'Worship & Prayer',
+          'Outreach & Evangelism',
+          'Media & Creative',
+          'Hospitality & Logistics'
+        ] &&
+        data.majorAndYear is string &&
+        data.majorAndYear.size() >= 1 &&
+        data.majorAndYear.size() <= 100 &&
+        data.bio is string &&
+        data.bio.size() >= 0 &&
+        data.bio.size() <= 300 &&
+        data.photoURL is string &&
+        data.photoURL.size() >= 0 &&
+        data.photoURL.size() <= 500 &&
+        data.officeLine is string &&
+        data.officeLine.size() >= 0 &&
+        data.officeLine.size() <= 60 &&
+        data.accessRole is string &&
+        data.accessRole.size() >= 1 &&
+        data.accessRole.size() <= 20 &&
+        data.accessRole in ['Student/Alumni', 'Admin'] &&
+        data.accountTag is string &&
+        data.accountTag.size() >= 0 &&
+        data.accountTag.size() <= 160 &&
+        data.isOnline is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPrivateContactInfo(data) {
+      return data.keys().hasAll([
+          'uid',
+          'email',
+          'notificationsEnabled',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'email',
+          'notificationsEnabled',
+          'updatedAt'
+        ]) &&
+        data.uid == request.auth.uid &&
+        isValidId(data.uid) &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 160 &&
+        data.notificationsEnabled is bool &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll([
+          'uid',
+          'invitationCode',
+          'grantedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'invitationCode',
+          'grantedAt'
+        ]) &&
+        data.uid == request.auth.uid &&
+        isValidId(data.uid) &&
+        data.invitationCode is string &&
+        data.invitationCode.size() >= 3 &&
+        data.invitationCode.size() <= 40 &&
+        data.grantedAt is timestamp;
+    }
+
+    function isValidAdvisoryRosterMeta(data) {
+      return data.keys().hasAll([
+          'advisorIds',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'advisorIds',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.updatedByUid == request.auth.uid &&
+        isValidId(data.updatedByUid) &&
+        data.advisorIds is list &&
+        data.advisorIds.size() <= 50 &&
+        (data.advisorIds.size() == 0 ||
+          (data.advisorIds[0] is string && data.advisorIds[0].size() <= 128)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdvisorEntry(data, advisorId) {
+      return data.keys().hasAll([
+          'id',
+          'name',
+          'localChurch',
+          'ministry',
+          'officeLine',
+          'details',
+          'photoUrl',
+          'updatedByUid',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'name',
+          'localChurch',
+          'ministry',
+          'officeLine',
+          'details',
+          'photoUrl',
+          'updatedByUid',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id == advisorId &&
+        isValidId(data.id) &&
+        data.updatedByUid == request.auth.uid &&
+        isValidId(data.updatedByUid) &&
+        data.name is string &&
+        data.name.size() >= 1 &&
+        data.name.size() <= 120 &&
+        data.localChurch is string &&
+        data.localChurch.size() >= 1 &&
+        data.localChurch.size() <= 160 &&
+        data.ministry is string &&
+        data.ministry.size() >= 1 &&
+        data.ministry.size() <= 160 &&
+        data.officeLine is string &&
+        data.officeLine.size() >= 1 &&
+        data.officeLine.size() <= 60 &&
+        data.details is string &&
+        data.details.size() >= 1 &&
+        data.details.size() <= 5000 &&
+        data.photoUrl is string &&
+        data.photoUrl.size() >= 0 &&
+        data.photoUrl.size() <= 250000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidEventRosterMeta(data) {
+      return data.keys().hasAll([
+          'eventIds',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'eventIds',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.updatedByUid == request.auth.uid &&
+        isValidId(data.updatedByUid) &&
+        data.eventIds is list &&
+        data.eventIds.size() <= 50 &&
+        (data.eventIds.size() == 0 ||
+          (data.eventIds[0] is string && data.eventIds[0].size() <= 128)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidEventEntry(data, eventId) {
+      return data.keys().hasAll([
+          'id',
+          'title',
+          'monthShort',
+          'dayNumber',
+          'dayOfWeek',
+          'fullDate',
+          'timeRange',
+          'location',
+          'description',
+          'type',
+          'imageUrl',
+          'isFeaturedMeeting',
+          'rsvpStatus',
+          'attendeesJson',
+          'agendaJson',
+          'updatedByUid',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'title',
+          'monthShort',
+          'dayNumber',
+          'dayOfWeek',
+          'fullDate',
+          'timeRange',
+          'location',
+          'description',
+          'type',
+          'imageUrl',
+          'isFeaturedMeeting',
+          'rsvpStatus',
+          'attendeesJson',
+          'agendaJson',
+          'updatedByUid',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id == eventId &&
+        isValidId(data.id) &&
+        data.updatedByUid == request.auth.uid &&
+        isValidId(data.updatedByUid) &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 140 &&
+        data.monthShort is string &&
+        data.monthShort.size() >= 1 &&
+        data.monthShort.size() <= 12 &&
+        data.dayNumber is string &&
+        data.dayNumber.size() >= 1 &&
+        data.dayNumber.size() <= 10 &&
+        data.dayOfWeek is string &&
+        data.dayOfWeek.size() >= 1 &&
+        data.dayOfWeek.size() <= 20 &&
+        data.fullDate is string &&
+        data.fullDate.size() >= 1 &&
+        data.fullDate.size() <= 120 &&
+        data.timeRange is string &&
+        data.timeRange.size() >= 1 &&
+        data.timeRange.size() <= 80 &&
+        data.location is string &&
+        data.location.size() >= 1 &&
+        data.location.size() <= 160 &&
+        data.description is string &&
+        data.description.size() >= 1 &&
+        data.description.size() <= 3000 &&
+        data.type is string &&
+        data.type.size() >= 1 &&
+        data.type.size() <= 20 &&
+        data.type in ['Meeting', 'Worship', 'Outreach', 'Prayer'] &&
+        data.imageUrl is string &&
+        data.imageUrl.size() >= 0 &&
+        data.imageUrl.size() <= 250000 &&
+        data.isFeaturedMeeting is bool &&
+        data.rsvpStatus is string &&
+        data.rsvpStatus.size() >= 1 &&
+        data.rsvpStatus.size() <= 20 &&
+        data.rsvpStatus in ['Going', 'Maybe', 'Not Going'] &&
+        data.attendeesJson is string &&
+        data.attendeesJson.size() >= 2 &&
+        data.attendeesJson.size() <= 20000 &&
+        data.agendaJson is string &&
+        data.agendaJson.size() >= 2 &&
+        data.agendaJson.size() <= 10000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidDashboardSyncState(data) {
+      return data.keys().hasAll([
+          'announcementsJson',
+          'membersJson',
+          'tasksJson',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'announcementsJson',
+          'membersJson',
+          'tasksJson',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.updatedByUid == request.auth.uid &&
+        isValidId(data.updatedByUid) &&
+        data.announcementsJson is string &&
+        data.announcementsJson.size() >= 2 &&
+        data.announcementsJson.size() <= 100000 &&
+        data.membersJson is string &&
+        data.membersJson.size() >= 2 &&
+        data.membersJson.size() <= 100000 &&
+        data.tasksJson is string &&
+        data.tasksJson.size() >= 2 &&
+        data.tasksJson.size() <= 100000 &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCommitteeRosterMeta(data) {
+      return data.keys().hasAll([
+          'memberUids',
+          'deletedUids',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'memberUids',
+          'deletedUids',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.updatedByUid == request.auth.uid &&
+        isValidId(data.updatedByUid) &&
+        data.memberUids is list &&
+        data.memberUids.size() <= 50 &&
+        (data.memberUids.size() == 0 ||
+          (data.memberUids[0] is string && data.memberUids[0].size() <= 128)) &&
+        data.deletedUids is list &&
+        data.deletedUids.size() <= 50 &&
+        (data.deletedUids.size() == 0 ||
+          (data.deletedUids[0] is string && data.deletedUids[0].size() <= 128)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidInvitationCodesMeta(data) {
+      return data.keys().hasAll([
+          'invitationsJson',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'invitationsJson',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        data.updatedByUid == request.auth.uid &&
+        isValidId(data.updatedByUid) &&
+        data.invitationsJson is string &&
+        data.invitationsJson.size() >= 2 &&
+        data.invitationsJson.size() <= 50000 &&
+        data.updatedAt is timestamp;
+    }
+
+    match /profiles/{userId} {
+      allow get: if isValidId(userId);
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidAmbassadorProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidAmbassadorProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName',
+          'initials',
+          'roleTitle',
+          'ministryTeam',
+          'majorAndYear',
+          'bio',
+          'photoURL',
+          'officeLine',
+          'accessRole',
+          'accountTag',
+          'isOnline',
+          'updatedAt'
+        ]);
+
+      match /private/{infoId} {
+        allow get: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(infoId) &&
+          infoId == 'contact' &&
+          exists(/databases/$(database)/documents/profiles/$(userId));
+
+        allow create: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(infoId) &&
+          infoId == 'contact' &&
+          isValidPrivateContactInfo(incoming()) &&
+          incoming().updatedAt == request.time &&
+          (exists(/databases/$(database)/documents/profiles/$(userId)) ||
+           existsAfter(/databases/$(database)/documents/profiles/$(userId)));
+
+        allow update: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(infoId) &&
+          infoId == 'contact' &&
+          isValidPrivateContactInfo(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'email',
+            'notificationsEnabled',
+            'updatedAt'
+          ]) &&
+          exists(/databases/$(database)/documents/profiles/$(userId));
+      }
+    }
+
+    match /admins/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidAdminRecord(incoming()) &&
+        incoming().grantedAt == request.time;
+    }
+
+    match /advisory_meta/{metaId} {
+      allow get: if isValidId(metaId) && metaId == 'roster';
+
+      allow create: if isSignedIn() &&
+        isValidId(metaId) &&
+        metaId == 'roster' &&
+        isValidAdvisoryRosterMeta(incoming()) &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(metaId) &&
+        metaId == 'roster' &&
+        isValidAdvisoryRosterMeta(incoming()) &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'advisorIds',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        isAdmin();
+    }
+
+    match /advisors/{advisorId} {
+      allow get: if isValidId(advisorId);
+
+      allow create: if isSignedIn() &&
+        isValidId(advisorId) &&
+        isValidAdvisorEntry(incoming(), advisorId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin() &&
+        (exists(/databases/$(database)/documents/advisory_meta/roster) ||
+         existsAfter(/databases/$(database)/documents/advisory_meta/roster));
+
+      allow update: if isSignedIn() &&
+        isValidId(advisorId) &&
+        isValidAdvisorEntry(incoming(), advisorId) &&
+        incoming().id == existing().id &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name',
+          'localChurch',
+          'ministry',
+          'officeLine',
+          'details',
+          'photoUrl',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        isAdmin() &&
+        exists(/databases/$(database)/documents/advisory_meta/roster);
+    }
+
+    match /event_meta/{metaId} {
+      allow get: if isValidId(metaId) && metaId == 'roster';
+
+      allow create: if isSignedIn() &&
+        isValidId(metaId) &&
+        metaId == 'roster' &&
+        isValidEventRosterMeta(incoming()) &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(metaId) &&
+        metaId == 'roster' &&
+        isValidEventRosterMeta(incoming()) &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'eventIds',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        isAdmin();
+    }
+
+    match /events/{eventId} {
+      allow get: if isValidId(eventId);
+
+      allow create: if isSignedIn() &&
+        isValidId(eventId) &&
+        isValidEventEntry(incoming(), eventId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isAdmin() &&
+        (exists(/databases/$(database)/documents/event_meta/roster) ||
+         existsAfter(/databases/$(database)/documents/event_meta/roster));
+
+      allow update: if isSignedIn() &&
+        isValidId(eventId) &&
+        isValidEventEntry(incoming(), eventId) &&
+        incoming().id == existing().id &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title',
+          'monthShort',
+          'dayNumber',
+          'dayOfWeek',
+          'fullDate',
+          'timeRange',
+          'location',
+          'description',
+          'type',
+          'imageUrl',
+          'isFeaturedMeeting',
+          'rsvpStatus',
+          'attendeesJson',
+          'agendaJson',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        isAdmin() &&
+        exists(/databases/$(database)/documents/event_meta/roster);
+    }
+
+    match /dashboard_sync/{stateId} {
+      allow get: if isValidId(stateId) && stateId == 'public_board';
+
+      allow create: if isSignedIn() &&
+        isValidId(stateId) &&
+        stateId == 'public_board' &&
+        isValidDashboardSyncState(incoming()) &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(stateId) &&
+        stateId == 'public_board' &&
+        isValidDashboardSyncState(incoming()) &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'announcementsJson',
+          'membersJson',
+          'tasksJson',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        isAdmin();
+    }
+
+    match /committee_meta/{metaId} {
+      allow get: if isValidId(metaId) && metaId == 'roster';
+
+      allow create: if isSignedIn() &&
+        isValidId(metaId) &&
+        metaId == 'roster' &&
+        isValidCommitteeRosterMeta(incoming()) &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(metaId) &&
+        metaId == 'roster' &&
+        isValidCommitteeRosterMeta(incoming()) &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'memberUids',
+          'deletedUids',
+          'updatedByUid',
+          'updatedAt'
+        ]);
+    }
+
+    match /invitation_meta/{metaId} {
+      allow get: if isValidId(metaId) && metaId == 'codes';
+
+      allow create: if isSignedIn() &&
+        isValidId(metaId) &&
+        metaId == 'codes' &&
+        isValidInvitationCodesMeta(incoming()) &&
+        incoming().updatedAt == request.time &&
+        isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(metaId) &&
+        metaId == 'codes' &&
+        isValidInvitationCodesMeta(incoming()) &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'invitationsJson',
+          'updatedByUid',
+          'updatedAt'
+        ]) &&
+        isAdmin();
+    }
+  }
+}
